@@ -115,6 +115,7 @@ namespace sdk {
     {
         GDK_RUNTIME_ASSERT(m_state == state_type::make_call);
         try {
+            m_twofactor_data["invalid_code"] = false;
             if (m_code.empty() || m_method.empty()) {
                 if (!m_twofactor_data.empty()) {
                     // Remove any previous auth attempts
@@ -137,6 +138,7 @@ namespace sdk {
                 } else {
                     // Caller should try entering the code again
                     m_state = state_type::resolve_code;
+                    m_twofactor_data["invalid_code"] = true;
                 }
             } else {
                 details = remap_ga_server_error(details);
@@ -175,6 +177,8 @@ namespace sdk {
                 status["method"] = m_method;
                 if (m_method != "gauth") {
                     status["attempts_remaining"] = m_attempts_remaining;
+                    if (m_twofactor_data.contains("invalid_code"))
+                        status["invalid_code"] = m_twofactor_data["invalid_code"];
                 }
             }
             break;
