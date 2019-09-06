@@ -132,13 +132,13 @@ namespace sdk {
             if (is_twofactor_invalid_code_error(details.second)) {
                 // The caller entered the wrong code
                 // FIXME: Error if the methods time limit is up or we are rate limited
+                m_twofactor_data["invalid_code"] = true;
                 if (m_method != "gauth" && --m_attempts_remaining == 0) {
                     // No more attempts left, caller should try the action again
                     set_error(res::id_invalid_twofactor_code);
                 } else {
                     // Caller should try entering the code again
                     m_state = state_type::resolve_code;
-                    m_twofactor_data["invalid_code"] = true;
                 }
             } else {
                 details = remap_ga_server_error(details);
@@ -177,9 +177,10 @@ namespace sdk {
                 status["method"] = m_method;
                 if (m_method != "gauth") {
                     status["attempts_remaining"] = m_attempts_remaining;
-                    if (m_twofactor_data.contains("invalid_code"))
-                        status["invalid_code"] = m_twofactor_data["invalid_code"];
                 }
+
+                if (m_twofactor_data.contains("invalid_code"))
+                    status["invalid_code"] = m_twofactor_data["invalid_code"];
             }
             break;
         case state_type::make_call:
@@ -622,7 +623,7 @@ namespace sdk {
                         if (!methods.empty()) {
                             m_action = "enable_2fa";
                             m_methods = methods;
-                            m_twofactor_data = { { "method", m_method_to_update } };
+                            m_twofactor_data = { { "method", m_method_to_update }, { "invalid_code", true } };
                             return state_type::request_code;
                         }
                     }
